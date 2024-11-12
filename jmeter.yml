@@ -2,11 +2,14 @@ trigger:
 - main  # Trigger on main branch push or you can specify your branch
 
 pool:
-  vmImage: 'windows-latest'  # Use Windows-based agent
+  name: 'Azure Pipelines'  # Use the default hosted agent pool
 
 jobs:
 - job: RunJMeterTests
   displayName: 'Run JMeter Performance Tests on Windows'
+  timeoutInMinutes: 120  # Increase timeout if tests are long-running
+  retries: 2  # Retry job up to 2 times if it fails
+
   steps:
 
   # Step 1: Install JMeter on Windows
@@ -23,7 +26,7 @@ jobs:
   # Step 3: Run JMeter Test Plan
   - script: |
       echo "Running JMeter Test Plan"
-      C:\jmeter\bin\jmeter -n -t $(Build.SourcesDirectory)\tests\test-plan.jmx -l $(Build.ArtifactStagingDirectory)\results.jtl
+      C:\jmeter\bin\jmeter -n -t $(Build.SourcesDirectory)\tests\test-plan.jmx -l $(Build.ArtifactStagingDirectory)\results.jtl -Dlog_level.jmeter=DEBUG
     displayName: 'Run JMeter Test Plan'
 
   # Step 4: Publish JMeter results
