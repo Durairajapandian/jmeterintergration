@@ -7,8 +7,7 @@ pool:
 jobs:
 - job: RunJMeterTests
   displayName: 'Run JMeter Performance Tests on Windows'
-  timeoutInMinutes: 120  # Increase timeout if tests are long-running
-  retries: 2  # Retry job up to 2 times if it fails
+  timeoutInMinutes: 120  # Optional: Increase timeout if tests are long-running
 
   steps:
 
@@ -23,11 +22,28 @@ jobs:
   # Step 2: Check out the repository to get the JMeter test plan (.jmx) file
   - checkout: self
 
-  # Step 3: Run JMeter Test Plan
+  # Step 3: Run JMeter Test Plan with Retry Logic
   - script: |
       echo "Running JMeter Test Plan"
-      C:\jmeter\bin\jmeter -n -t $(Build.SourcesDirectory)\tests\test-plan.jmx -l $(Build.ArtifactStagingDirectory)\results.jtl -Dlog_level.jmeter=DEBUG
-    displayName: 'Run JMeter Test Plan'
+      $maxRetries = 3
+      $retryCount = 0
+      $success = $false
+      while (-not $success -and $retryCount -lt $maxRetries) {
+        $retryCount++
+        echo "Attempt $retryCount of $maxRetries"
+        try {
+          C:\jmeter\bin\jmeter -n -t $(Build.SourcesDirectory)\tests\test-plan.jmx -l $(Build.ArtifactStagingDirectory)\results.jtl -Dlog_level.jmeter=DEBUG
+          $success = $true
+        } catch {
+          echo "JMeter test failed on attempt $retryCount"
+          if ($retryCount -eq $maxRetries) {
+            throw "JMeter test failed after $maxRetries attempts."
+          }
+          echo "Retrying in 30 seconds..."
+          Start-Sleep -Seconds 30
+        }
+      }
+    displayName: 'Run JMeter Test Plan (With Retries)'
 
   # Step 4: Publish JMeter results
   - task: PublishTestResults@2
