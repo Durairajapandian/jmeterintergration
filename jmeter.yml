@@ -1,0 +1,42 @@
+trigger:
+- main  # Trigger on main branch push or you can specify your branch
+
+pool:
+  vmImage: 'windows-latest'  # Use Windows-based agent
+
+jobs:
+- job: RunJMeterTests
+  displayName: 'Run JMeter Performance Tests on Windows'
+  steps:
+
+  # Step 1: Install JMeter on Windows
+  - script: |
+      echo "Installing JMeter"
+      Invoke-WebRequest -Uri "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.4.1.zip" -OutFile "apache-jmeter-5.4.1.zip"
+      Expand-Archive -Path "apache-jmeter-5.4.1.zip" -DestinationPath "C:\"
+      Move-Item -Path "C:\apache-jmeter-5.4.1" -Destination "C:\jmeter"
+    displayName: 'Install JMeter'
+
+  # Step 2: Check out the repository to get the JMeter test plan (.jmx) file
+  - checkout: self
+
+  # Step 3: Run JMeter Test Plan
+  - script: |
+      echo "Running JMeter Test Plan"
+      C:\jmeter\bin\jmeter -n -t $(Build.SourcesDirectory)\tests\test-plan.jmx -l $(Build.ArtifactStagingDirectory)\results.jtl
+    displayName: 'Run JMeter Test Plan'
+
+  # Step 4: Publish JMeter results
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFiles: '$(Build.ArtifactStagingDirectory)\results.jtl'
+      testRunTitle: 'JMeter Test Results'
+    displayName: 'Publish JMeter Results'
+
+  # Optional: Step 5: Archive JMeter Logs and Results
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'jmeter-results'
+      publishLocation: 'Container'
+    displayName: 'Archive JMeter Results'
