@@ -7,7 +7,8 @@ pool:
 jobs:
 - job: RunJMeterTests
   displayName: 'Run JMeter Performance Tests on Windows'
-  timeoutInMinutes: 120  # Optional: Increase timeout if tests are long-running
+  timeoutInMinutes: 120  # Increase timeout if tests are long-running
+  maxConcurrency: 1  # Run one job at a time
 
   steps:
 
