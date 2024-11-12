@@ -2,7 +2,7 @@ trigger:
 - main  # Trigger on main branch push or you can specify your branch
 
 pool:
-  vmImage: 'Azure Pipelines'  # Use Windows-based agent
+  vmImage: 'windows-latest'  # Use Windows-based agent
 
 jobs:
 - job: RunJMeterTests
